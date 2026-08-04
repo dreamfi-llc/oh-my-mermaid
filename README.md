@@ -86,6 +86,16 @@ omm update                         # Update to latest version
 
 Run `omm help` for the full command list.
 
+### Viewer CSS
+
+Add `.omm/viewer.css` to override viewer styles for a project. The file is optional and is served only by the local viewer. For example:
+
+```css
+.node-path {
+  opacity: 1;
+}
+```
+
 ## Skills
 
 Skills are commands you run **inside your AI coding tool** (not the terminal). They start with `/`.

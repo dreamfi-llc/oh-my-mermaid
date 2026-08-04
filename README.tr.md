@@ -88,6 +88,16 @@ omm update                         # En güncel sürüme geç
 
 Tüm komutları görmek için `omm help` çalıştırın.
 
+### Görüntüleyici CSS'i
+
+Bir projenin görüntüleyici stillerini geçersiz kılmak için `.omm/viewer.css` ekleyin. Bu dosya isteğe bağlıdır ve yalnızca yerel görüntüleyici tarafından sunulur. Örneğin:
+
+```css
+.node-path {
+  opacity: 1;
+}
+```
+
 ## Yetenekler
 
 Yetenekler, **AI kodlama aracınızın içinde** çalıştırdığınız komutlardır (terminalde değil). `/` ile başlarlar.

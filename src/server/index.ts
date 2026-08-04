@@ -8,6 +8,17 @@ import { addSSEClient, startWatcher } from './watcher.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export function readViewerCss(cwd: string = process.cwd()): string | null {
+  const cssPath = path.join(cwd, '.omm', 'viewer.css');
+  if (!fs.existsSync(cssPath)) return null;
+  try {
+    return fs.readFileSync(cssPath, 'utf-8');
+  } catch (err) {
+    process.stderr.write(`warning: could not read .omm/viewer.css: ${(err as Error).message}\n`);
+    return null;
+  }
+}
+
 function getViewerHtml(): string {
   // Try dist/ first, then src/server/ for dev
   const candidates = [
@@ -40,6 +51,18 @@ export function startServer(port: number): void {
       if (handleApi(req, res)) return;
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'not found' }));
+      return;
+    }
+
+    if (url.pathname === '/viewer.css') {
+      const css = readViewerCss();
+      if (css === null) {
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8' });
+      res.end(css);
       return;
     }
 

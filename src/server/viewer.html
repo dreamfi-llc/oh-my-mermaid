@@ -498,12 +498,12 @@ function renderGroup(cls, classesData, allClasses, level, seen = new Set(), scop
     }
     if (!nodeDims[n.id]) {
       const lbl = n.label.replace(/^@/,'');
-      const [mainLbl] = lbl.split('\n');
-      const hasPath = lbl.includes('\n');
+      const [mainLbl, ...pathLines] = lbl.split('\n');
       const maxW = nodes.length > 10 ? 160 : 220;
-      const w = Math.min(maxW, Math.max(80, tw(mainLbl, '12px Inter,system-ui') + 44));
+      const labelWidths = [tw(mainLbl, '12px Inter,system-ui'), ...pathLines.map(line => tw(line, '9px monospace'))];
+      const w = Math.min(maxW, Math.max(80, Math.max(...labelWidths) + 44));
       const baseH = n.shape==='diamond' ? 42 : 38;
-      nodeDims[n.id] = {width: w, height: hasPath ? baseH + 14 : baseH};
+      nodeDims[n.id] = {width: w, height: baseH + pathLines.length * 14};
     }
   }
 
@@ -666,7 +666,7 @@ function renderGroup(cls, classesData, allClasses, level, seen = new Set(), scop
       }
       const da = st.dash ? `stroke-dasharray="${st.dash}"` : '';
       const rawLbl = n.label.replace(/^@/,'');
-      const [mainLbl, pathLbl] = rawLbl.split('\n');
+      const [mainLbl, ...pathLines] = rawLbl.split('\n');
       const cx = r1(pos.x), cy = r1(pos.y);
       const fs = 12;
       const nodeScopedId = esc(scopedPath + '/' + n.id);
@@ -681,12 +681,14 @@ function renderGroup(cls, classesData, allClasses, level, seen = new Set(), scop
         shape = `<rect class="nshape" x="${nx}" y="${ny}" width="${dim.width}" height="${dim.height}"
           rx="4" fill="${st.bg}" stroke="${st.border}" stroke-width="2" ${da}/>`;
       }
-      if (pathLbl) {
+      if (pathLines.length) {
+        const mainY = r1(cy - pathLines.length * 7);
+        const pathText = pathLines.map((line, i) => `<text class="node-path" x="${cx}" y="${r1(mainY + (i + 1) * 14)}" text-anchor="middle" dominant-baseline="central"
+            font-family="'SF Mono','Fira Code',monospace" font-size="9" fill="${st.text}" opacity="0.45">${esc(line)}</text>`).join('');
         svg += `<g class="reg-node" data-cls="${nodeScopedId}" onclick="event.stopPropagation();window.__openSb('${nodeScopedId}')">${shape}
-          <text class="node-lbl" x="${cx}" y="${r1(cy - 7)}" text-anchor="middle" dominant-baseline="central"
+          <text class="node-lbl" x="${cx}" y="${mainY}" text-anchor="middle" dominant-baseline="central"
             font-family="Inter,system-ui,sans-serif" font-size="${fs}" fill="${st.text}">${esc(mainLbl)}</text>
-          <text class="node-path" x="${cx}" y="${r1(cy + 7)}" text-anchor="middle" dominant-baseline="central"
-            font-family="'SF Mono','Fira Code',monospace" font-size="9" fill="${st.text}" opacity="0.45">${esc(pathLbl)}</text>
+          ${pathText}
         </g>`;
       } else {
         svg += `<g class="reg-node" data-cls="${nodeScopedId}" onclick="event.stopPropagation();window.__openSb('${nodeScopedId}')">${shape}
@@ -712,10 +714,10 @@ function renderFlatSVG(text) {
   const dims = {};
   for (const n of nodes) {
     const lbl = n.label.replace(/^@/,'');
-    const [mainLbl] = lbl.split('\n');
-    const hasPath = lbl.includes('\n');
-    const w = Math.min(180,Math.max(60,tw(mainLbl,'11px Inter,system-ui')+28));
-    const h = (n.shape==='diamond'?34:28) + (hasPath ? 12 : 0);
+    const [mainLbl, ...pathLines] = lbl.split('\n');
+    const labelWidths = [tw(mainLbl,'11px Inter,system-ui'), ...pathLines.map(line => tw(line, '9px monospace'))];
+    const w = Math.min(180,Math.max(60,Math.max(...labelWidths)+28));
+    const h = (n.shape==='diamond'?34:28) + pathLines.length * 12;
     dims[n.id]={w,h}; g.setNode(n.id,{width:w,height:h});
   }
   for (const e of edges) { if (g.hasNode(e.from)&&g.hasNode(e.to)) g.setEdge(e.from,e.to,{label:e.label}); }
@@ -744,17 +746,19 @@ function renderFlatSVG(text) {
     const nx=r1(pos.x-w/2), ny=r1(pos.y-h/2), cx=r1(pos.x), cy=r1(pos.y);
     const st=nodeStyle(n), da=st.dash?`stroke-dasharray="${st.dash}"`:'';
     const rawLbl=n.label.replace(/^@/,'');
-    const [mainLbl, pathLbl]=rawLbl.split('\n');
+    const [mainLbl, ...pathLines]=rawLbl.split('\n');
     let shape='';
     if (n.shape==='diamond') shape=`<polygon points="${cx},${ny} ${nx+w},${cy} ${cx},${ny+h} ${nx},${cy}" fill="${st.bg}" stroke="${st.border}" stroke-width="2" ${da}/>`;
     else if (n.shape==='stadium'||n.shape==='round') shape=`<rect x="${nx}" y="${ny}" width="${w}" height="${h}" rx="${h/2}" fill="${st.bg}" stroke="${st.border}" stroke-width="2" ${da}/>`;
     else shape=`<rect x="${nx}" y="${ny}" width="${w}" height="${h}" rx="4" fill="${st.bg}" stroke="${st.border}" stroke-width="2" ${da}/>`;
-    if (pathLbl) {
+    if (pathLines.length) {
+      const mainY=r1(cy-pathLines.length*6);
+      const pathText=pathLines.map((line,i)=>`<text class="node-path" x="${cx}" y="${r1(mainY+(i+1)*12)}" text-anchor="middle" dominant-baseline="central"
+          font-family="'SF Mono','Fira Code',monospace" font-size="9" fill="${st.text}" opacity="0.45">${esc(line)}</text>`).join('');
       nds+=`<g>${shape}
-        <text x="${cx}" y="${r1(cy-6)}" text-anchor="middle" dominant-baseline="central"
+        <text class="node-lbl" x="${cx}" y="${mainY}" text-anchor="middle" dominant-baseline="central"
           font-family="Inter,system-ui" font-size="11" fill="${st.text}">${esc(mainLbl)}</text>
-        <text x="${cx}" y="${r1(cy+6)}" text-anchor="middle" dominant-baseline="central"
-          font-family="'SF Mono','Fira Code',monospace" font-size="9" fill="${st.text}" opacity="0.45">${esc(pathLbl)}</text>
+        ${pathText}
       </g>`;
     } else {
       nds+=`<g>${shape}<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
